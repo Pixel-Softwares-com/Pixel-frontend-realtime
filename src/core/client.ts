@@ -3,6 +3,8 @@ import type { ChannelConfig, ChannelId, EchoLike } from './types';
 import { createNotificationsApi, type NotificationsApi, type NotificationsApiOptions } from '../modules/notifications/api';
 import { listenForNotifications, type NotificationHandler } from '../modules/notifications/listener';
 import type { RealtimeNotification } from '../modules/notifications/types';
+import { openCustomChannel } from '../modules/custom-channels/listener';
+import type { CustomChannelHandle } from '../modules/custom-channels/types';
 
 export type RealtimeClientOptions = {
   echo: EchoLike;
@@ -10,17 +12,24 @@ export type RealtimeClientOptions = {
   channels?: Partial<ChannelConfig>;
   api?: NotificationsApiOptions;
   notificationEvent?: string;
+  customChannelPrefix?: string;
+  guard?: string;
 };
 
 export type NotificationsClient = {
   api: NotificationsApi;
-  listen(handler: NotificationHandler, userId?: ChannelId): ReturnType<typeof listenForNotifications>;
+  listen(
+    handler: NotificationHandler,
+    userId?: ChannelId,
+    guard?: string,
+  ): ReturnType<typeof listenForNotifications>;
 };
 
 export type RealtimeClient = {
   userChannel(userId?: ChannelId): string;
   privateUserChannel(userId?: ChannelId): string;
   notifications: NotificationsClient;
+  channel(type: string, id: ChannelId): CustomChannelHandle;
 };
 
 export function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient {
@@ -38,7 +47,7 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     notifications: {
       api: notificationsApi,
 
-      listen(handler: (notification: RealtimeNotification) => void, userId?: ChannelId) {
+      listen(handler: (notification: RealtimeNotification) => void, userId?: ChannelId, guard?: string) {
         const resolvedUserId = resolveUserId(userId, options.userId);
 
         return listenForNotifications({
@@ -46,9 +55,19 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
           userId: resolvedUserId,
           channels: options.channels,
           event: options.notificationEvent,
+          guard: guard ?? options.guard,
           onNotification: handler,
         });
       },
+    },
+
+    channel(type: string, id: ChannelId): CustomChannelHandle {
+      return openCustomChannel({
+        echo: options.echo,
+        type,
+        id,
+        prefix: options.customChannelPrefix,
+      });
     },
   };
 }

@@ -1,5 +1,6 @@
-import { privateUserChannel, userChannel } from '../../core/channel';
+import { privateScopedChannel, privateUserChannel, scopedChannel, userChannel } from '../../core/channel';
 import type { ChannelConfig, ChannelId, EchoLike, RealtimeSubscription } from '../../core/types';
+import { toWireEvent } from '../../core/wire';
 import type { NotificationEventPayload, RealtimeNotification } from './types';
 
 export type NotificationHandler = (notification: RealtimeNotification) => void;
@@ -9,13 +10,18 @@ export type ListenForNotificationsOptions = {
   userId: ChannelId;
   channels?: Partial<ChannelConfig>;
   event?: string;
+  guard?: string;
   onNotification: NotificationHandler;
 };
 
 export function listenForNotifications(options: ListenForNotificationsOptions): RealtimeSubscription {
-  const channel = userChannel(options.userId, options.channels);
-  const wireChannel = privateUserChannel(options.userId, options.channels);
-  const event = options.event ?? '.pixel.realtime.notification';
+  const channel = options.guard
+    ? scopedChannel(options.guard, options.userId)
+    : userChannel(options.userId, options.channels);
+  const wireChannel = options.guard
+    ? privateScopedChannel(options.guard, options.userId)
+    : privateUserChannel(options.userId, options.channels);
+  const event = toWireEvent(options.event ?? 'pixel.realtime.notification');
   const echoChannel = options.echo.private(channel);
   const callback = (payload: unknown) => {
     options.onNotification(extractNotification(payload));

@@ -1,40 +1,20 @@
 # pixel-realtime contract
 
-This document defines the current boundary between the backend and frontend packages.
+The backend/frontend boundary is defined in a single canonical document:
 
-## Backend package
+➡️ [../docs/contract.md](../docs/contract.md)
 
-- Composer package: `pixel/realtime`
-- Namespace: `Pixel\Realtime`
-- Laravel config key: `pixel-realtime`
-- Publish tag: `pixel-realtime-config`
-- Current provider: `Pixel\Realtime\RealtimeServiceProvider`
+That file covers package names, Reverb env keys, the auth boundary, modules,
+and the notifications/custom-channels wire data. Update it first, then keep this
+package in sync with it.
 
-## Frontend package
+## Frontend essentials
 
 - npm package: `pixel-realtime`
 - Entry point: `src/index.ts`
-- Current factory: `createRealtimeClient(options)`
-- Reverb helper: `createReverbEchoConfig(options)`
-- Auth token source: `tokenProvider`
-- First module: Notifications
-
-## Modules
-
-Core is always installed. Modules are optional and publish only their own backend migrations.
-
-- `notifications`: implemented in v1
-- `custom_channels`: reserved
-- `chat`: reserved
-- `presence`: reserved
-
-## Notifications data
-
-- Echo channel name: `user.{id}`
-- Wire/private channel name: `private-user.{id}`
-- Event name: `.pixel.realtime.notification`
-- API prefix: `/pixel-realtime`
-
-## Auth boundary
-
-The frontend package does not login users or store tokens. Applications pass a `tokenProvider` when they use JWT, Sanctum bearer tokens, Passport, or a custom token store. Session/cookie apps can omit it.
+- Main factory: `createRealtimeClient(options)`
+- Reverb helper: `createReverbEchoConfig(options)` — accepts `key`, `host`,
+  `port`, `scheme`, `authEndpoint`, `tokenProvider`. Never accepts or returns
+  the Reverb app secret.
+- Auth token source: `tokenProvider`. The package never logs users in or stores
+  tokens; session/cookie apps can omit it.

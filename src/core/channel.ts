@@ -13,6 +13,20 @@ export function privateUserChannel(id: ChannelId, config: Partial<ChannelConfig>
   return buildChannel(config.userWirePrefix ?? defaultChannelConfig.userWirePrefix, id);
 }
 
+export function scopedChannel(scope: string, id: ChannelId): string {
+  const cleanScope = scope.trim();
+
+  if (!cleanScope) {
+    throw new Error('Channel scope is required.');
+  }
+
+  return buildChannel(cleanScope, id);
+}
+
+export function privateScopedChannel(scope: string, id: ChannelId): string {
+  return `private-${scopedChannel(scope, id)}`;
+}
+
 function buildChannel(prefix: string, id: ChannelId): string {
   const value = String(id).trim();
 

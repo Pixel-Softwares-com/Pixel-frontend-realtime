@@ -3,7 +3,9 @@ import {
   createNotificationsApi,
   createRealtimeClient,
   createReverbEchoConfig,
+  privateScopedChannel,
   privateUserChannel,
+  scopedChannel,
   userChannel,
   type EchoLike,
 } from '../src/index';
@@ -60,6 +62,41 @@ describe('channels', () => {
     expect(userChannel(15)).toBe('user.15');
     expect(privateUserChannel(15)).toBe('private-user.15');
   });
+
+  it('builds scoped channel names per guard', () => {
+    expect(scopedChannel('admin', 15)).toBe('admin.15');
+    expect(scopedChannel('users', 15)).toBe('users.15');
+    expect(privateScopedChannel('admin', 15)).toBe('private-admin.15');
+  });
+
+  it('rejects an empty scope', () => {
+    expect(() => scopedChannel('', 15)).toThrow(/scope/i);
+  });
+});
+
+describe('createRealtimeClient with guard', () => {
+  it('listens on the guard-scoped channel when guard is provided', () => {
+    const echo = new FakeEcho();
+    const client = createRealtimeClient({ echo, userId: 5, guard: 'admin' });
+    const handler = vi.fn();
+
+    const subscription = client.notifications.listen(handler);
+
+    expect(subscription.channel).toBe('admin.5');
+    expect(subscription.wireChannel).toBe('private-admin.5');
+    expect(echo.channels.has('admin.5')).toBe(true);
+  });
+
+  it('overrides the guard per call when one is passed to listen()', () => {
+    const echo = new FakeEcho();
+    const client = createRealtimeClient({ echo, userId: 5, guard: 'admin' });
+    const handler = vi.fn();
+
+    const subscription = client.notifications.listen(handler, 5, 'users');
+
+    expect(subscription.channel).toBe('users.5');
+    expect(subscription.wireChannel).toBe('private-users.5');
+  });
 });
 
 describe('createReverbEchoConfig', () => {
@@ -88,6 +125,26 @@ describe('createReverbEchoConfig', () => {
         },
       },
     });
+  });
+
+  it('defaults authEndpoint to /broadcasting/auth and never includes a secret', () => {
+    const config = createReverbEchoConfig({
+      key: 'app-key',
+      host: '127.0.0.1',
+      port: 8080,
+      scheme: 'http',
+    });
+
+    expect(config.authEndpoint).toBe('/broadcasting/auth');
+
+    const serialized = JSON.stringify(config).toLowerCase();
+    expect(serialized).not.toContain('secret');
+    expect(serialized).not.toContain('app_secret');
+    expect(serialized).not.toContain('appsecret');
+
+    expect(Object.keys(config)).not.toContain('secret');
+    expect(Object.keys(config)).not.toContain('appSecret');
+    expect(Object.keys(config)).not.toContain('app_secret');
   });
 });
 
@@ -128,6 +185,16 @@ describe('createRealtimeClient', () => {
     subscription.stop();
     expect(channel?.stopped).toEqual(['.pixel.realtime.notification']);
     expect(echo.left).toEqual(['user.15']);
+  });
+
+  it('normalizes a custom notification event name to its wire form', () => {
+    const echo = new FakeEcho();
+    const client = createRealtimeClient({ echo, userId: 15, notificationEvent: 'my.custom.event' });
+
+    client.notifications.listen(vi.fn());
+
+    // A leading dot is added so Echo matches the broadcastAs() name.
+    expect(echo.channels.get('user.15')?.listeners.has('.my.custom.event')).toBe(true);
   });
 });
 

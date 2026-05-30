@@ -4,10 +4,18 @@ export type { RealtimeClient, RealtimeClientOptions, NotificationsClient } from 
 export { createReverbEchoConfig } from './core/reverb';
 export type { ReverbEchoConfig, ReverbEchoConfigOptions, ReverbTransport } from './core/reverb';
 
-export { userChannel, privateUserChannel, defaultChannelConfig } from './core/channel';
+export {
+  userChannel,
+  privateUserChannel,
+  scopedChannel,
+  privateScopedChannel,
+  defaultChannelConfig,
+} from './core/channel';
 
 export { createBearerHeaders, createSyncBearerHeaders } from './core/auth';
 export type { AuthToken, TokenProvider, SyncTokenProvider } from './core/auth';
+
+export { toWireEvent } from './core/wire';
 
 export type {
   ChannelId,
@@ -33,3 +41,26 @@ export type {
   RealtimeNotificationData,
   NotificationEventPayload,
 } from './modules/notifications/types';
+
+export { createBenchmarkRecorder } from './modules/notifications/benchmark';
+export type {
+  BenchmarkRecorder,
+  BenchmarkRecorderOptions,
+  BenchmarkSample,
+  BenchmarkSummary,
+} from './modules/notifications/benchmark';
+
+export {
+  buildCustomChannelName,
+  buildPrivateWireName,
+  openCustomChannel,
+  listenForCustomChannel,
+} from './modules/custom-channels/listener';
+
+export type {
+  CustomChannelOptions,
+  CustomChannelHandle,
+  CustomChannelEventHandler,
+  CustomChannelEnvelope,
+  CustomChannelPayload,
+} from './modules/custom-channels/types';

@@ -1,10 +1,10 @@
 import { createRealtimeClient, createReverbEchoConfig } from '../src/index';
 
 const echoConfig = createReverbEchoConfig({
-  key: import.meta.env.VITE_REVERB_APP_KEY,
-  host: import.meta.env.VITE_REVERB_HOST,
-  port: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-  scheme: import.meta.env.VITE_REVERB_SCHEME === 'https' ? 'https' : 'http',
+  key: import.meta.env.VITE_PIXEL_REALTIME_APP_KEY,
+  host: import.meta.env.VITE_PIXEL_REALTIME_HOST,
+  port: Number(import.meta.env.VITE_PIXEL_REALTIME_PORT ?? 8080),
+  scheme: import.meta.env.VITE_PIXEL_REALTIME_SCHEME === 'https' ? 'https' : 'http',
   tokenProvider: () => localStorage.getItem('token'),
 });
 
