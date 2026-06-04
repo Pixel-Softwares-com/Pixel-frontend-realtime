@@ -22,6 +22,8 @@ export type {
   ChannelConfig,
   EchoLike,
   EchoPrivateChannel,
+  EchoPresenceChannel,
+  PresenceMember,
   RealtimeSubscription,
 } from './core/types';
 
@@ -64,3 +66,20 @@ export type {
   CustomChannelEnvelope,
   CustomChannelPayload,
 } from './modules/custom-channels/types';
+
+export {
+  buildPresenceChannelName,
+  buildPresenceWireName,
+  openPresenceChannel,
+  listenForPresenceChannel,
+} from './modules/presence/listener';
+
+export type {
+  PresenceChannelOptions,
+  PresenceChannelHandle,
+  PresenceChannelEventHandler,
+  PresenceChannelEnvelope,
+  PresenceChannelPayload,
+  PresenceMemberHandler,
+  PresenceMembersHandler,
+} from './modules/presence/types';

@@ -5,6 +5,8 @@ import { listenForNotifications, type NotificationHandler } from '../modules/not
 import type { RealtimeNotification } from '../modules/notifications/types';
 import { openCustomChannel } from '../modules/custom-channels/listener';
 import type { CustomChannelHandle } from '../modules/custom-channels/types';
+import { openPresenceChannel } from '../modules/presence/listener';
+import type { PresenceChannelHandle } from '../modules/presence/types';
 
 export type RealtimeClientOptions = {
   echo: EchoLike;
@@ -13,6 +15,7 @@ export type RealtimeClientOptions = {
   api?: NotificationsApiOptions;
   notificationEvent?: string;
   customChannelPrefix?: string;
+  presenceChannelPrefix?: string;
   guard?: string;
 };
 
@@ -30,6 +33,7 @@ export type RealtimeClient = {
   privateUserChannel(userId?: ChannelId): string;
   notifications: NotificationsClient;
   channel(type: string, id: ChannelId): CustomChannelHandle;
+  presence(type: string, id: ChannelId): PresenceChannelHandle;
 };
 
 export function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient {
@@ -67,6 +71,15 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
         type,
         id,
         prefix: options.customChannelPrefix,
+      });
+    },
+
+    presence(type: string, id: ChannelId): PresenceChannelHandle {
+      return openPresenceChannel({
+        echo: options.echo,
+        type,
+        id,
+        prefix: options.presenceChannelPrefix,
       });
     },
   };
