@@ -1,6 +1,6 @@
 {
   "name": "pixel-realtime",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "TypeScript client package foundation for Pixel realtime features.",
   "license": "MIT",
   "repository": {
