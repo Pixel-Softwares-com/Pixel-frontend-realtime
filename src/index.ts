@@ -1,3 +1,6 @@
+export { createRealtime } from './core/connect';
+export type { CreateRealtimeOptions } from './core/connect';
+
 export { createRealtimeClient } from './core/client';
 export type { RealtimeClient, RealtimeClientOptions, NotificationsClient } from './core/client';
 

@@ -1,5 +1,61 @@
 'use strict';
 
+var Echo = require('laravel-echo');
+var Pusher = require('pusher-js');
+
+function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
+
+var Echo__default = /*#__PURE__*/_interopDefault(Echo);
+var Pusher__default = /*#__PURE__*/_interopDefault(Pusher);
+
+// src/core/connect.ts
+
+// src/core/auth.ts
+async function createBearerHeaders(tokenProvider) {
+  return bearerHeader(normalizeToken(await tokenProvider?.()));
+}
+function createSyncBearerHeaders(tokenProvider) {
+  return bearerHeader(normalizeToken(tokenProvider?.()));
+}
+function bearerHeader(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+function normalizeToken(token) {
+  const value = token?.trim();
+  return value ? value : null;
+}
+
+// src/core/reverb.ts
+function createReverbEchoConfig(options) {
+  const key = options.key.trim();
+  if (!key) {
+    throw new Error("Reverb app key is required.");
+  }
+  const forceTLS = options.scheme === "https";
+  const port = options.port ?? (forceTLS ? 443 : 8080);
+  const authHeaders = {
+    ...createSyncBearerHeaders(options.tokenProvider),
+    ...options.auth?.headers ?? {}
+  };
+  return {
+    broadcaster: "reverb",
+    key,
+    wsHost: options.host ?? windowSafeHost(),
+    wsPort: port,
+    wssPort: port,
+    forceTLS,
+    enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
+    authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
+    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
+  };
+}
+function windowSafeHost() {
+  if (typeof window !== "undefined" && window.location.hostname) {
+    return window.location.hostname;
+  }
+  return "127.0.0.1";
+}
+
 // src/core/channel.ts
 var defaultChannelConfig = {
   userEchoPrefix: "user",
@@ -27,21 +83,6 @@ function buildChannel(prefix, id) {
     throw new Error("Channel id is required.");
   }
   return `${prefix}.${value}`;
-}
-
-// src/core/auth.ts
-async function createBearerHeaders(tokenProvider) {
-  return bearerHeader(normalizeToken(await tokenProvider?.()));
-}
-function createSyncBearerHeaders(tokenProvider) {
-  return bearerHeader(normalizeToken(tokenProvider?.()));
-}
-function bearerHeader(token) {
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-function normalizeToken(token) {
-  const value = token?.trim();
-  return value ? value : null;
 }
 
 // src/modules/notifications/api.ts
@@ -341,35 +382,27 @@ function resolveUserId(userId, fallback) {
   return value;
 }
 
-// src/core/reverb.ts
-function createReverbEchoConfig(options) {
-  const key = options.key.trim();
-  if (!key) {
-    throw new Error("Reverb app key is required.");
-  }
-  const forceTLS = options.scheme === "https";
-  const port = options.port ?? (forceTLS ? 443 : 8080);
-  const authHeaders = {
-    ...createSyncBearerHeaders(options.tokenProvider),
-    ...options.auth?.headers ?? {}
-  };
-  return {
-    broadcaster: "reverb",
+// src/core/connect.ts
+function createRealtime(options) {
+  const {
     key,
-    wsHost: options.host ?? windowSafeHost(),
-    wsPort: port,
-    wssPort: port,
-    forceTLS,
-    enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
-    authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
-    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
-  };
-}
-function windowSafeHost() {
-  if (typeof window !== "undefined" && window.location.hostname) {
-    return window.location.hostname;
+    host,
+    port,
+    scheme,
+    authEndpoint,
+    auth,
+    tokenProvider,
+    enabledTransports,
+    ...clientOptions
+  } = options;
+  if (typeof window !== "undefined") {
+    window.Pusher = Pusher__default.default;
   }
-  return "127.0.0.1";
+  const echo = new Echo__default.default({
+    ...createReverbEchoConfig({ key, host, port, scheme, authEndpoint, auth, tokenProvider, enabledTransports }),
+    client: Pusher__default.default
+  });
+  return createRealtimeClient({ echo, ...clientOptions });
 }
 
 // src/modules/notifications/benchmark.ts
@@ -460,6 +493,7 @@ exports.buildPrivateWireName = buildPrivateWireName;
 exports.createBearerHeaders = createBearerHeaders;
 exports.createBenchmarkRecorder = createBenchmarkRecorder;
 exports.createNotificationsApi = createNotificationsApi;
+exports.createRealtime = createRealtime;
 exports.createRealtimeClient = createRealtimeClient;
 exports.createReverbEchoConfig = createReverbEchoConfig;
 exports.createSyncBearerHeaders = createSyncBearerHeaders;

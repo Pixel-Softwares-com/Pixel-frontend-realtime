@@ -1,3 +1,54 @@
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+// src/core/connect.ts
+
+// src/core/auth.ts
+async function createBearerHeaders(tokenProvider) {
+  return bearerHeader(normalizeToken(await tokenProvider?.()));
+}
+function createSyncBearerHeaders(tokenProvider) {
+  return bearerHeader(normalizeToken(tokenProvider?.()));
+}
+function bearerHeader(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+function normalizeToken(token) {
+  const value = token?.trim();
+  return value ? value : null;
+}
+
+// src/core/reverb.ts
+function createReverbEchoConfig(options) {
+  const key = options.key.trim();
+  if (!key) {
+    throw new Error("Reverb app key is required.");
+  }
+  const forceTLS = options.scheme === "https";
+  const port = options.port ?? (forceTLS ? 443 : 8080);
+  const authHeaders = {
+    ...createSyncBearerHeaders(options.tokenProvider),
+    ...options.auth?.headers ?? {}
+  };
+  return {
+    broadcaster: "reverb",
+    key,
+    wsHost: options.host ?? windowSafeHost(),
+    wsPort: port,
+    wssPort: port,
+    forceTLS,
+    enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
+    authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
+    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
+  };
+}
+function windowSafeHost() {
+  if (typeof window !== "undefined" && window.location.hostname) {
+    return window.location.hostname;
+  }
+  return "127.0.0.1";
+}
+
 // src/core/channel.ts
 var defaultChannelConfig = {
   userEchoPrefix: "user",
@@ -25,21 +76,6 @@ function buildChannel(prefix, id) {
     throw new Error("Channel id is required.");
   }
   return `${prefix}.${value}`;
-}
-
-// src/core/auth.ts
-async function createBearerHeaders(tokenProvider) {
-  return bearerHeader(normalizeToken(await tokenProvider?.()));
-}
-function createSyncBearerHeaders(tokenProvider) {
-  return bearerHeader(normalizeToken(tokenProvider?.()));
-}
-function bearerHeader(token) {
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-function normalizeToken(token) {
-  const value = token?.trim();
-  return value ? value : null;
 }
 
 // src/modules/notifications/api.ts
@@ -339,35 +375,27 @@ function resolveUserId(userId, fallback) {
   return value;
 }
 
-// src/core/reverb.ts
-function createReverbEchoConfig(options) {
-  const key = options.key.trim();
-  if (!key) {
-    throw new Error("Reverb app key is required.");
-  }
-  const forceTLS = options.scheme === "https";
-  const port = options.port ?? (forceTLS ? 443 : 8080);
-  const authHeaders = {
-    ...createSyncBearerHeaders(options.tokenProvider),
-    ...options.auth?.headers ?? {}
-  };
-  return {
-    broadcaster: "reverb",
+// src/core/connect.ts
+function createRealtime(options) {
+  const {
     key,
-    wsHost: options.host ?? windowSafeHost(),
-    wsPort: port,
-    wssPort: port,
-    forceTLS,
-    enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
-    authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
-    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
-  };
-}
-function windowSafeHost() {
-  if (typeof window !== "undefined" && window.location.hostname) {
-    return window.location.hostname;
+    host,
+    port,
+    scheme,
+    authEndpoint,
+    auth,
+    tokenProvider,
+    enabledTransports,
+    ...clientOptions
+  } = options;
+  if (typeof window !== "undefined") {
+    window.Pusher = Pusher;
   }
-  return "127.0.0.1";
+  const echo = new Echo({
+    ...createReverbEchoConfig({ key, host, port, scheme, authEndpoint, auth, tokenProvider, enabledTransports }),
+    client: Pusher
+  });
+  return createRealtimeClient({ echo, ...clientOptions });
 }
 
 // src/modules/notifications/benchmark.ts
@@ -451,6 +479,6 @@ function percentile(sorted, p) {
   return lowerValue * (1 - weight) + upperValue * weight;
 }
 
-export { buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
+export { buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

@@ -1,3 +1,37 @@
+type AuthToken = string | null | undefined;
+type TokenProvider = () => AuthToken | Promise<AuthToken>;
+type SyncTokenProvider = () => AuthToken;
+declare function createBearerHeaders(tokenProvider?: TokenProvider): Promise<Record<string, string>>;
+declare function createSyncBearerHeaders(tokenProvider?: SyncTokenProvider): Record<string, string>;
+
+type ReverbTransport = 'ws' | 'wss';
+type ReverbEchoConfigOptions = {
+    key: string;
+    host?: string;
+    port?: number;
+    scheme?: 'http' | 'https';
+    authEndpoint?: string;
+    auth?: {
+        headers?: Record<string, string>;
+    };
+    tokenProvider?: SyncTokenProvider;
+    enabledTransports?: ReverbTransport[];
+};
+type ReverbEchoConfig = {
+    broadcaster: 'reverb';
+    key: string;
+    wsHost: string;
+    wsPort: number;
+    wssPort: number;
+    forceTLS: boolean;
+    enabledTransports: ReverbTransport[];
+    authEndpoint: string;
+    auth?: {
+        headers?: Record<string, string>;
+    };
+};
+declare function createReverbEchoConfig(options: ReverbEchoConfigOptions): ReverbEchoConfig;
+
 type ChannelId = string | number;
 type ChannelConfig = {
     userEchoPrefix: string;
@@ -30,12 +64,6 @@ type RealtimeSubscription = {
     wireChannel: string;
     stop(): void;
 };
-
-type AuthToken = string | null | undefined;
-type TokenProvider = () => AuthToken | Promise<AuthToken>;
-type SyncTokenProvider = () => AuthToken;
-declare function createBearerHeaders(tokenProvider?: TokenProvider): Promise<Record<string, string>>;
-declare function createSyncBearerHeaders(tokenProvider?: SyncTokenProvider): Record<string, string>;
 
 type RealtimeNotificationData = Record<string, unknown>;
 type RealtimeNotification = {
@@ -150,33 +178,16 @@ type RealtimeClient = {
 };
 declare function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient;
 
-type ReverbTransport = 'ws' | 'wss';
-type ReverbEchoConfigOptions = {
-    key: string;
-    host?: string;
-    port?: number;
-    scheme?: 'http' | 'https';
-    authEndpoint?: string;
-    auth?: {
-        headers?: Record<string, string>;
-    };
-    tokenProvider?: SyncTokenProvider;
-    enabledTransports?: ReverbTransport[];
-};
-type ReverbEchoConfig = {
-    broadcaster: 'reverb';
-    key: string;
-    wsHost: string;
-    wsPort: number;
-    wssPort: number;
-    forceTLS: boolean;
-    enabledTransports: ReverbTransport[];
-    authEndpoint: string;
-    auth?: {
-        headers?: Record<string, string>;
-    };
-};
-declare function createReverbEchoConfig(options: ReverbEchoConfigOptions): ReverbEchoConfig;
+type CreateRealtimeOptions = ReverbEchoConfigOptions & Omit<RealtimeClientOptions, 'echo'>;
+/**
+ * Batteries-included entry point: builds the Reverb config, constructs Echo (with
+ * pusher-js wired in), and returns a ready RealtimeClient — so a consuming app does
+ * not import laravel-echo/pusher-js, set `window.Pusher`, or call `new Echo` itself.
+ *
+ * For advanced cases that need to own the Echo instance, keep using
+ * `createReverbEchoConfig` + `createRealtimeClient({ echo })` directly.
+ */
+declare function createRealtime(options: CreateRealtimeOptions): RealtimeClient;
 
 declare const defaultChannelConfig: ChannelConfig;
 declare function userChannel(id: ChannelId, config?: Partial<ChannelConfig>): string;
@@ -235,4 +246,4 @@ declare function buildPresenceWireName(channel: string): string;
 declare function openPresenceChannel(options: PresenceChannelOptions): PresenceChannelHandle;
 declare function listenForPresenceChannel<TPayload = PresenceChannelPayload>(echo: EchoLike, type: string, id: ChannelId, event: string, handler: PresenceChannelEventHandler<TPayload>, prefix?: string): RealtimeSubscription;
 
-export { type AuthToken, type BenchmarkRecorder, type BenchmarkRecorderOptions, type BenchmarkSample, type BenchmarkSummary, type ChannelConfig, type ChannelId, type CustomChannelEnvelope, type CustomChannelEventHandler, type CustomChannelHandle, type CustomChannelOptions, type CustomChannelPayload, type EchoLike, type EchoPresenceChannel, type EchoPrivateChannel, type FetchLike, type HeadersFactory, type ListenForNotificationsOptions, type NotificationEventPayload, type NotificationHandler, type NotificationsApi, type NotificationsApiOptions, type NotificationsClient, type PresenceChannelEnvelope, type PresenceChannelEventHandler, type PresenceChannelHandle, type PresenceChannelOptions, type PresenceChannelPayload, type PresenceMember, type PresenceMemberHandler, type PresenceMembersHandler, type RealtimeClient, type RealtimeClientOptions, type RealtimeNotification, type RealtimeNotificationData, type RealtimeSubscription, type ReverbEchoConfig, type ReverbEchoConfigOptions, type ReverbTransport, type SyncTokenProvider, type TokenProvider, buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
+export { type AuthToken, type BenchmarkRecorder, type BenchmarkRecorderOptions, type BenchmarkSample, type BenchmarkSummary, type ChannelConfig, type ChannelId, type CreateRealtimeOptions, type CustomChannelEnvelope, type CustomChannelEventHandler, type CustomChannelHandle, type CustomChannelOptions, type CustomChannelPayload, type EchoLike, type EchoPresenceChannel, type EchoPrivateChannel, type FetchLike, type HeadersFactory, type ListenForNotificationsOptions, type NotificationEventPayload, type NotificationHandler, type NotificationsApi, type NotificationsApiOptions, type NotificationsClient, type PresenceChannelEnvelope, type PresenceChannelEventHandler, type PresenceChannelHandle, type PresenceChannelOptions, type PresenceChannelPayload, type PresenceMember, type PresenceMemberHandler, type PresenceMembersHandler, type RealtimeClient, type RealtimeClientOptions, type RealtimeNotification, type RealtimeNotificationData, type RealtimeSubscription, type ReverbEchoConfig, type ReverbEchoConfigOptions, type ReverbTransport, type SyncTokenProvider, type TokenProvider, buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
