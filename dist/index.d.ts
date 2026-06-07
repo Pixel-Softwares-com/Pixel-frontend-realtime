@@ -155,6 +155,26 @@ type PresenceChannelHandle = {
     stop(): void;
 };
 
+/** Coarse connection status surfaced to consumers. */
+type ConnectionStatus = 'online' | 'reconnecting' | 'offline';
+type ConnectionClient = {
+    /** Current connection status. */
+    status(): ConnectionStatus;
+    /**
+     * Subscribe to status changes. The handler is invoked immediately with the
+     * current status, then on every transition. Returns an unsubscribe function.
+     */
+    onChange(handler: (status: ConnectionStatus) => void): () => void;
+    /** Force an immediate reconnect attempt (the transport already auto-reconnects). */
+    reconnect(): void;
+};
+/**
+ * Connection-state helpers over an Echo instance built on the pusher protocol
+ * (Reverb / Pusher). Resilient to non-pusher transports: status() reports
+ * 'offline' and onChange()/reconnect() degrade gracefully.
+ */
+declare function createConnectionClient(echo: EchoLike): ConnectionClient;
+
 type RealtimeClientOptions = {
     echo: EchoLike;
     userId?: ChannelId;
@@ -175,6 +195,7 @@ type RealtimeClient = {
     notifications: NotificationsClient;
     channel(type: string, id: ChannelId): CustomChannelHandle;
     presence(type: string, id: ChannelId): PresenceChannelHandle;
+    connection: ConnectionClient;
 };
 declare function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient;
 
@@ -246,4 +267,4 @@ declare function buildPresenceWireName(channel: string): string;
 declare function openPresenceChannel(options: PresenceChannelOptions): PresenceChannelHandle;
 declare function listenForPresenceChannel<TPayload = PresenceChannelPayload>(echo: EchoLike, type: string, id: ChannelId, event: string, handler: PresenceChannelEventHandler<TPayload>, prefix?: string): RealtimeSubscription;
 
-export { type AuthToken, type BenchmarkRecorder, type BenchmarkRecorderOptions, type BenchmarkSample, type BenchmarkSummary, type ChannelConfig, type ChannelId, type CreateRealtimeOptions, type CustomChannelEnvelope, type CustomChannelEventHandler, type CustomChannelHandle, type CustomChannelOptions, type CustomChannelPayload, type EchoLike, type EchoPresenceChannel, type EchoPrivateChannel, type FetchLike, type HeadersFactory, type ListenForNotificationsOptions, type NotificationEventPayload, type NotificationHandler, type NotificationsApi, type NotificationsApiOptions, type NotificationsClient, type PresenceChannelEnvelope, type PresenceChannelEventHandler, type PresenceChannelHandle, type PresenceChannelOptions, type PresenceChannelPayload, type PresenceMember, type PresenceMemberHandler, type PresenceMembersHandler, type RealtimeClient, type RealtimeClientOptions, type RealtimeNotification, type RealtimeNotificationData, type RealtimeSubscription, type ReverbEchoConfig, type ReverbEchoConfigOptions, type ReverbTransport, type SyncTokenProvider, type TokenProvider, buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
+export { type AuthToken, type BenchmarkRecorder, type BenchmarkRecorderOptions, type BenchmarkSample, type BenchmarkSummary, type ChannelConfig, type ChannelId, type ConnectionClient, type ConnectionStatus, type CreateRealtimeOptions, type CustomChannelEnvelope, type CustomChannelEventHandler, type CustomChannelHandle, type CustomChannelOptions, type CustomChannelPayload, type EchoLike, type EchoPresenceChannel, type EchoPrivateChannel, type FetchLike, type HeadersFactory, type ListenForNotificationsOptions, type NotificationEventPayload, type NotificationHandler, type NotificationsApi, type NotificationsApiOptions, type NotificationsClient, type PresenceChannelEnvelope, type PresenceChannelEventHandler, type PresenceChannelHandle, type PresenceChannelOptions, type PresenceChannelPayload, type PresenceMember, type PresenceMemberHandler, type PresenceMembersHandler, type RealtimeClient, type RealtimeClientOptions, type RealtimeNotification, type RealtimeNotificationData, type RealtimeSubscription, type ReverbEchoConfig, type ReverbEchoConfigOptions, type ReverbTransport, type SyncTokenProvider, type TokenProvider, buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createConnectionClient, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };

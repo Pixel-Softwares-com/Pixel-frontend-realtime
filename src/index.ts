@@ -4,6 +4,9 @@ export type { CreateRealtimeOptions } from './core/connect';
 export { createRealtimeClient } from './core/client';
 export type { RealtimeClient, RealtimeClientOptions, NotificationsClient } from './core/client';
 
+export { createConnectionClient } from './core/connection';
+export type { ConnectionClient, ConnectionStatus } from './core/connection';
+
 export { createReverbEchoConfig } from './core/reverb';
 export type { ReverbEchoConfig, ReverbEchoConfigOptions, ReverbTransport } from './core/reverb';
 

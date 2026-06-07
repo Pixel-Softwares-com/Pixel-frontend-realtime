@@ -1263,6 +1263,42 @@ function isEnvelope2(payload) {
   return typeof payload === "object" && payload !== null && "channel" in payload && "event" in payload && "payload" in payload;
 }
 
+// src/core/connection.ts
+var NOOP = () => {
+};
+var mapState = (state) => {
+  if (state === "connected") return "online";
+  if (state === "failed" || state === "disconnected") return "offline";
+  return "reconnecting";
+};
+var getPusher = (echo) => echo?.connector?.pusher;
+function createConnectionClient(echo) {
+  return {
+    status() {
+      const pusher = getPusher(echo);
+      return pusher ? mapState(pusher.connection?.state) : "offline";
+    },
+    onChange(handler) {
+      const pusher = getPusher(echo);
+      if (!pusher?.connection?.bind) {
+        handler(pusher ? mapState(pusher.connection?.state) : "offline");
+        return NOOP;
+      }
+      const { connection } = pusher;
+      const listener = () => handler(mapState(connection.state));
+      connection.bind("state_change", listener);
+      handler(mapState(connection.state));
+      return () => connection.unbind("state_change", listener);
+    },
+    reconnect() {
+      const pusher = getPusher(echo);
+      if (!pusher) return;
+      pusher.disconnect();
+      pusher.connect();
+    }
+  };
+}
+
 // src/core/client.ts
 function createRealtimeClient(options) {
   const notificationsApi = createNotificationsApi(options.api ?? {});
@@ -1302,7 +1338,8 @@ function createRealtimeClient(options) {
         id,
         prefix: options.presenceChannelPrefix
       });
-    }
+    },
+    connection: createConnectionClient(options.echo)
   };
 }
 function resolveUserId(userId, fallback) {
@@ -1417,6 +1454,6 @@ function percentile(sorted, p2) {
   return lowerValue * (1 - weight) + upperValue * weight;
 }
 
-export { buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
+export { buildCustomChannelName, buildPresenceChannelName, buildPresenceWireName, buildPrivateWireName, createBearerHeaders, createBenchmarkRecorder, createConnectionClient, createNotificationsApi, createRealtime, createRealtimeClient, createReverbEchoConfig, createSyncBearerHeaders, defaultChannelConfig, listenForCustomChannel, listenForNotifications, listenForPresenceChannel, openCustomChannel, openPresenceChannel, privateScopedChannel, privateUserChannel, scopedChannel, toWireEvent, userChannel };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

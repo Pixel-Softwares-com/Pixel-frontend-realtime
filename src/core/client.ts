@@ -7,6 +7,7 @@ import { openCustomChannel } from '../modules/custom-channels/listener';
 import type { CustomChannelHandle } from '../modules/custom-channels/types';
 import { openPresenceChannel } from '../modules/presence/listener';
 import type { PresenceChannelHandle } from '../modules/presence/types';
+import { createConnectionClient, type ConnectionClient } from './connection';
 
 export type RealtimeClientOptions = {
   echo: EchoLike;
@@ -34,6 +35,7 @@ export type RealtimeClient = {
   notifications: NotificationsClient;
   channel(type: string, id: ChannelId): CustomChannelHandle;
   presence(type: string, id: ChannelId): PresenceChannelHandle;
+  connection: ConnectionClient;
 };
 
 export function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient {
@@ -82,6 +84,8 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
         prefix: options.presenceChannelPrefix,
       });
     },
+
+    connection: createConnectionClient(options.echo),
   };
 }
 

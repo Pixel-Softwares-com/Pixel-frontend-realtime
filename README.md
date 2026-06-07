@@ -138,6 +138,30 @@ The echo channel is `report.5`; the wire channel is `presence-report.5`. Like cu
 
 You can also import the helpers directly: `openPresenceChannel`, `listenForPresenceChannel`, `buildPresenceChannelName`, `buildPresenceWireName`.
 
+## Connection Status
+
+A small read-only view of the live socket, for showing an "offline / reconnecting" indicator and offering a manual reconnect. Exposed on the realtime client as `connection`:
+
+```ts
+const realtime = createRealtime({ /* ...reverb config... */ });
+
+// current coarse status: 'online' | 'reconnecting' | 'offline'
+realtime.connection.status();
+
+// subscribe — fires immediately with the current status, then on every change.
+// returns an unsubscribe function.
+const off = realtime.connection.onChange((status) => {
+  console.log('socket is', status);
+});
+
+// force an immediate reconnect attempt (the transport already auto-reconnects)
+realtime.connection.reconnect();
+
+off();
+```
+
+Status is derived from the underlying pusher-js connection state: `connected → online`; `failed`/`disconnected → offline`; everything else (`connecting`, `unavailable`, …) → `reconnecting`. On a non-pusher transport it degrades gracefully (`status()` returns `offline`, `onChange` emits once, `reconnect` is a no-op). Build it standalone with `createConnectionClient(echo)`.
+
 ## Running the package locally
 
 ```bash

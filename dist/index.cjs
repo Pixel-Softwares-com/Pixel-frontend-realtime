@@ -1269,6 +1269,42 @@ function isEnvelope2(payload) {
   return typeof payload === "object" && payload !== null && "channel" in payload && "event" in payload && "payload" in payload;
 }
 
+// src/core/connection.ts
+var NOOP = () => {
+};
+var mapState = (state) => {
+  if (state === "connected") return "online";
+  if (state === "failed" || state === "disconnected") return "offline";
+  return "reconnecting";
+};
+var getPusher = (echo) => echo?.connector?.pusher;
+function createConnectionClient(echo) {
+  return {
+    status() {
+      const pusher = getPusher(echo);
+      return pusher ? mapState(pusher.connection?.state) : "offline";
+    },
+    onChange(handler) {
+      const pusher = getPusher(echo);
+      if (!pusher?.connection?.bind) {
+        handler(pusher ? mapState(pusher.connection?.state) : "offline");
+        return NOOP;
+      }
+      const { connection } = pusher;
+      const listener = () => handler(mapState(connection.state));
+      connection.bind("state_change", listener);
+      handler(mapState(connection.state));
+      return () => connection.unbind("state_change", listener);
+    },
+    reconnect() {
+      const pusher = getPusher(echo);
+      if (!pusher) return;
+      pusher.disconnect();
+      pusher.connect();
+    }
+  };
+}
+
 // src/core/client.ts
 function createRealtimeClient(options) {
   const notificationsApi = createNotificationsApi(options.api ?? {});
@@ -1308,7 +1344,8 @@ function createRealtimeClient(options) {
         id,
         prefix: options.presenceChannelPrefix
       });
-    }
+    },
+    connection: createConnectionClient(options.echo)
   };
 }
 function resolveUserId(userId, fallback) {
@@ -1429,6 +1466,7 @@ exports.buildPresenceWireName = buildPresenceWireName;
 exports.buildPrivateWireName = buildPrivateWireName;
 exports.createBearerHeaders = createBearerHeaders;
 exports.createBenchmarkRecorder = createBenchmarkRecorder;
+exports.createConnectionClient = createConnectionClient;
 exports.createNotificationsApi = createNotificationsApi;
 exports.createRealtime = createRealtime;
 exports.createRealtimeClient = createRealtimeClient;
