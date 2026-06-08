@@ -53,7 +53,7 @@ const echo = new Echo({
     authEndpoint: '/broadcasting/auth',
     tokenProvider: () => localStorage.getItem('token'),
   }),
-  client: Pusher,
+  Pusher,
 });
 ```
 

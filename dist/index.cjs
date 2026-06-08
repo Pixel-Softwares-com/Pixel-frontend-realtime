@@ -1374,7 +1374,7 @@ function createRealtime(options) {
   }
   const echo = new S({
     ...createReverbEchoConfig({ key, host, port, scheme, authEndpoint, auth, tokenProvider, enabledTransports }),
-    client: Pusher__default.default
+    Pusher: Pusher__default.default
   });
   return createRealtimeClient({ echo, ...clientOptions });
 }

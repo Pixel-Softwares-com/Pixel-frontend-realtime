@@ -33,7 +33,7 @@ export function createRealtime(options: CreateRealtimeOptions): RealtimeClient {
 
   const echo = new Echo({
     ...createReverbEchoConfig({ key, host, port, scheme, authEndpoint, auth, tokenProvider, enabledTransports }),
-    client: Pusher,
+    Pusher,
   } as unknown as ConstructorParameters<typeof Echo>[0]) as unknown as EchoLike;
 
   return createRealtimeClient({ echo, ...clientOptions });
