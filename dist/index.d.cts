@@ -28,6 +28,8 @@ type ReverbEchoConfig = {
     authEndpoint: string;
     auth?: {
         headers?: Record<string, string>;
+        /** Called by pusher-js on every channel-auth request, so the token is never stale. */
+        headersProvider?: () => Record<string, string>;
     };
 };
 declare function createReverbEchoConfig(options: ReverbEchoConfigOptions): ReverbEchoConfig;

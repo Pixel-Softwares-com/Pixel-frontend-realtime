@@ -970,10 +970,12 @@ function createReverbEchoConfig(options) {
   }
   const forceTLS = options.scheme === "https";
   const port = options.port ?? (forceTLS ? 443 : 8080);
-  const authHeaders = {
+  const callerHeaders = options.auth?.headers ?? {};
+  const resolveAuthHeaders = () => ({
     ...createSyncBearerHeaders(options.tokenProvider),
-    ...options.auth?.headers ?? {}
-  };
+    ...callerHeaders
+  });
+  const authHeaders = resolveAuthHeaders();
   return {
     broadcaster: "reverb",
     key,
@@ -983,7 +985,7 @@ function createReverbEchoConfig(options) {
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
     authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
-    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
+    auth: options.tokenProvider ? { headers: authHeaders, headersProvider: resolveAuthHeaders } : Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
   };
 }
 function windowSafeHost() {

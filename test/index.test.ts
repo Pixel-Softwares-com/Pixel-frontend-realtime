@@ -127,6 +127,37 @@ describe('createReverbEchoConfig', () => {
     });
   });
 
+  it('re-reads the token on every auth request instead of freezing it at construction', () => {
+    let token = 'old-token';
+    const config = createReverbEchoConfig({ key: 'app-key', tokenProvider: () => token });
+
+    expect(config.auth?.headers).toEqual({ Authorization: 'Bearer old-token' });
+
+    token = 'new-token';
+
+    expect(config.auth?.headersProvider?.()).toEqual({ Authorization: 'Bearer new-token' });
+  });
+
+  it('resolves the token even when it is missing at construction', () => {
+    let token: string | null = null;
+    const config = createReverbEchoConfig({ key: 'app-key', tokenProvider: () => token });
+
+    expect(config.auth?.headers).toEqual({});
+
+    token = 'token-after-login';
+
+    expect(config.auth?.headersProvider?.()).toEqual({ Authorization: 'Bearer token-after-login' });
+  });
+
+  it('keeps caller-supplied headers and omits the provider when there is no tokenProvider', () => {
+    const config = createReverbEchoConfig({
+      key: 'app-key',
+      auth: { headers: { 'X-Tenant': 'acme' } },
+    });
+
+    expect(config.auth).toEqual({ headers: { 'X-Tenant': 'acme' } });
+  });
+
   it('defaults authEndpoint to /broadcasting/auth and never includes a secret', () => {
     const config = createReverbEchoConfig({
       key: 'app-key',

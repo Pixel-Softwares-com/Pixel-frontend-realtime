@@ -26,6 +26,8 @@ export type ReverbEchoConfig = {
   authEndpoint: string;
   auth?: {
     headers?: Record<string, string>;
+    /** Called by pusher-js on every channel-auth request, so the token is never stale. */
+    headersProvider?: () => Record<string, string>;
   };
 };
 
@@ -38,10 +40,17 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
 
   const forceTLS = options.scheme === 'https';
   const port = options.port ?? (forceTLS ? 443 : 8080);
-  const authHeaders = {
+  const callerHeaders = options.auth?.headers ?? {};
+
+  // The token is resolved per auth request, not once at construction: a token read
+  // at startup goes stale on the next login or refresh, and pusher-js would keep
+  // sending that dead bearer on every subscribe — a silent 401 that leaves the
+  // client connected but subscribed to nothing.
+  const resolveAuthHeaders = () => ({
     ...createSyncBearerHeaders(options.tokenProvider),
-    ...(options.auth?.headers ?? {}),
-  };
+    ...callerHeaders,
+  });
+  const authHeaders = resolveAuthHeaders();
 
   return {
     broadcaster: 'reverb',
@@ -52,7 +61,11 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ['wss'] : ['ws', 'wss']),
     authEndpoint: options.authEndpoint ?? '/broadcasting/auth',
-    auth: Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth,
+    auth: options.tokenProvider
+      ? { headers: authHeaders, headersProvider: resolveAuthHeaders }
+      : Object.keys(authHeaders).length > 0
+        ? { headers: authHeaders }
+        : options.auth,
   };
 }
 
