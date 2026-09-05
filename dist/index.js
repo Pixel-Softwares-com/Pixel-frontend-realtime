@@ -983,6 +983,7 @@ function createReverbEchoConfig(options) {
   if (options.auth?.paramsProvider) {
     authOptions.paramsProvider = options.auth.paramsProvider;
   }
+  const authEndpoint = options.authEndpoint ?? "/broadcasting/auth";
   return {
     broadcaster: "reverb",
     key,
@@ -991,8 +992,12 @@ function createReverbEchoConfig(options) {
     wssPort: port,
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
-    authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
-    auth: Object.keys(authOptions).length > 0 ? authOptions : options.auth
+    authEndpoint,
+    auth: Object.keys(authOptions).length > 0 ? authOptions : options.auth,
+    // pusher-js copies only `params` and `headers` off the legacy `auth` key and drops both
+    // providers without a word — `channelAuthorization` is the option it reads them from, and
+    // it ignores the top-level `authEndpoint`, so the endpoint has to be repeated here.
+    channelAuthorization: { transport: "ajax", endpoint: authEndpoint, ...authOptions }
   };
 }
 function windowSafeHost() {

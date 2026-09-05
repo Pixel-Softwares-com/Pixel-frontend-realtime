@@ -17,6 +17,16 @@ export type ReverbEchoConfigOptions = {
   enabledTransports?: ReverbTransport[];
 };
 
+export type ReverbAuthOptions = {
+  headers?: Record<string, string>;
+  /** Called by pusher-js on every channel-auth request, so the token is never stale. */
+  headersProvider?: () => Record<string, string>;
+  /** Extra body fields on every channel-auth request. */
+  params?: Record<string, string>;
+  /** Called by pusher-js on every channel-auth request, so the fields are never stale. */
+  paramsProvider?: () => Record<string, string>;
+};
+
 export type ReverbEchoConfig = {
   broadcaster: 'reverb';
   key: string;
@@ -26,15 +36,8 @@ export type ReverbEchoConfig = {
   forceTLS: boolean;
   enabledTransports: ReverbTransport[];
   authEndpoint: string;
-  auth?: {
-    headers?: Record<string, string>;
-    /** Called by pusher-js on every channel-auth request, so the token is never stale. */
-    headersProvider?: () => Record<string, string>;
-    /** Extra body fields on every channel-auth request. */
-    params?: Record<string, string>;
-    /** Called by pusher-js on every channel-auth request, so the fields are never stale. */
-    paramsProvider?: () => Record<string, string>;
-  };
+  auth?: ReverbAuthOptions;
+  channelAuthorization: ReverbAuthOptions & { transport: 'ajax'; endpoint: string };
 };
 
 export function createReverbEchoConfig(options: ReverbEchoConfigOptions): ReverbEchoConfig {
@@ -61,7 +64,7 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
   // The auth endpoint often needs more than the token — a tenant, a role the caller is
   // acting as — and pusher-js already appends `params`/`paramsProvider` to the auth body.
   // Provider form for anything that changes while the client is alive.
-  const authOptions: ReverbEchoConfig['auth'] = {};
+  const authOptions: ReverbAuthOptions = {};
 
   if (options.tokenProvider) {
     authOptions.headers = authHeaders;
@@ -78,6 +81,8 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
     authOptions.paramsProvider = options.auth.paramsProvider;
   }
 
+  const authEndpoint = options.authEndpoint ?? '/broadcasting/auth';
+
   return {
     broadcaster: 'reverb',
     key,
@@ -86,8 +91,12 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
     wssPort: port,
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ['wss'] : ['ws', 'wss']),
-    authEndpoint: options.authEndpoint ?? '/broadcasting/auth',
+    authEndpoint,
     auth: Object.keys(authOptions).length > 0 ? authOptions : options.auth,
+    // pusher-js copies only `params` and `headers` off the legacy `auth` key and drops both
+    // providers without a word — `channelAuthorization` is the option it reads them from, and
+    // it ignores the top-level `authEndpoint`, so the endpoint has to be repeated here.
+    channelAuthorization: { transport: 'ajax', endpoint: authEndpoint, ...authOptions },
   };
 }
 

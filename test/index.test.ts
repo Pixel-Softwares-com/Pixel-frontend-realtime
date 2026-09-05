@@ -153,6 +153,25 @@ describe('createReverbEchoConfig', () => {
     expect(config.auth?.paramsProvider?.()).toEqual({ view_as: 'committee_team_leader' });
   });
 
+  it('emits channelAuthorization, the only auth option pusher-js reads the providers from', () => {
+    let viewAs = 'committee_member';
+    const config = createReverbEchoConfig({
+      key: 'app-key',
+      authEndpoint: 'https://api.test/broadcasting/auth',
+      tokenProvider: () => 'jwt-token',
+      auth: { paramsProvider: () => ({ view_as: viewAs }) },
+    });
+
+    expect(config.channelAuthorization.transport).toBe('ajax');
+    expect(config.channelAuthorization.endpoint).toBe('https://api.test/broadcasting/auth');
+    expect(config.channelAuthorization.headersProvider?.()).toEqual({ Authorization: 'Bearer jwt-token' });
+    expect(config.channelAuthorization.paramsProvider?.()).toEqual({ view_as: 'committee_member' });
+
+    viewAs = 'committee_team_leader';
+
+    expect(config.channelAuthorization.paramsProvider?.()).toEqual({ view_as: 'committee_team_leader' });
+  });
+
   it('carries auth params even when no token provider is given', () => {
     const config = createReverbEchoConfig({ key: 'app-key', auth: { params: { tenant: 'acme' } } });
 
