@@ -165,6 +165,8 @@ describe('createReverbEchoConfig', () => {
     expect(config.channelAuthorization.transport).toBe('ajax');
     expect(config.channelAuthorization.endpoint).toBe('https://api.test/broadcasting/auth');
     expect(config.channelAuthorization.headersProvider?.()).toEqual({ Authorization: 'Bearer jwt-token' });
+    // both would land on one XHR and setRequestHeader appends, joining two bearers with a comma
+    expect(config.channelAuthorization.headers).toBeUndefined();
     expect(config.channelAuthorization.paramsProvider?.()).toEqual({ view_as: 'committee_member' });
 
     viewAs = 'committee_team_leader';

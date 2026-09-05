@@ -83,6 +83,13 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
 
   const authEndpoint = options.authEndpoint ?? '/broadcasting/auth';
 
+  // Only one of the two may travel: pusher-js applies `headers` and then `headersProvider()`
+  // to the same XHR, and setRequestHeader appends rather than replaces, so sending both puts
+  // two comma-joined bearers in one Authorization header. The provider returns the same
+  // material, resolved later.
+  const { headers: _staticHeaders, ...withoutStaticHeaders } = authOptions;
+  const channelAuthOptions = authOptions.headersProvider ? withoutStaticHeaders : authOptions;
+
   return {
     broadcaster: 'reverb',
     key,
@@ -96,7 +103,7 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
     // pusher-js copies only `params` and `headers` off the legacy `auth` key and drops both
     // providers without a word — `channelAuthorization` is the option it reads them from, and
     // it ignores the top-level `authEndpoint`, so the endpoint has to be repeated here.
-    channelAuthorization: { transport: 'ajax', endpoint: authEndpoint, ...authOptions },
+    channelAuthorization: { transport: 'ajax', endpoint: authEndpoint, ...channelAuthOptions },
   };
 }
 
