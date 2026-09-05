@@ -127,6 +127,39 @@ describe('createReverbEchoConfig', () => {
     });
   });
 
+  it('passes auth params through to pusher-js alongside the token headers', () => {
+    const config = createReverbEchoConfig({
+      key: 'app-key',
+      tokenProvider: () => 'jwt-token',
+      auth: { params: { tenant: 'acme' } },
+    });
+
+    expect(config.auth?.params).toEqual({ tenant: 'acme' });
+    expect(config.auth?.headers).toEqual({ Authorization: 'Bearer jwt-token' });
+  });
+
+  it('re-reads auth params on every request instead of freezing them at construction', () => {
+    let viewAs = 'committee_member';
+    const config = createReverbEchoConfig({
+      key: 'app-key',
+      tokenProvider: () => 'jwt-token',
+      auth: { paramsProvider: () => ({ view_as: viewAs }) },
+    });
+
+    expect(config.auth?.paramsProvider?.()).toEqual({ view_as: 'committee_member' });
+
+    viewAs = 'committee_team_leader';
+
+    expect(config.auth?.paramsProvider?.()).toEqual({ view_as: 'committee_team_leader' });
+  });
+
+  it('carries auth params even when no token provider is given', () => {
+    const config = createReverbEchoConfig({ key: 'app-key', auth: { params: { tenant: 'acme' } } });
+
+    expect(config.auth?.params).toEqual({ tenant: 'acme' });
+    expect(config.auth?.headers).toBeUndefined();
+  });
+
   it('re-reads the token on every auth request instead of freezing it at construction', () => {
     let token = 'old-token';
     const config = createReverbEchoConfig({ key: 'app-key', tokenProvider: () => token });

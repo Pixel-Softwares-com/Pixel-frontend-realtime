@@ -13,6 +13,8 @@ type ReverbEchoConfigOptions = {
     authEndpoint?: string;
     auth?: {
         headers?: Record<string, string>;
+        params?: Record<string, string>;
+        paramsProvider?: () => Record<string, string>;
     };
     tokenProvider?: SyncTokenProvider;
     enabledTransports?: ReverbTransport[];
@@ -30,6 +32,10 @@ type ReverbEchoConfig = {
         headers?: Record<string, string>;
         /** Called by pusher-js on every channel-auth request, so the token is never stale. */
         headersProvider?: () => Record<string, string>;
+        /** Extra body fields on every channel-auth request. */
+        params?: Record<string, string>;
+        /** Called by pusher-js on every channel-auth request, so the fields are never stale. */
+        paramsProvider?: () => Record<string, string>;
     };
 };
 declare function createReverbEchoConfig(options: ReverbEchoConfigOptions): ReverbEchoConfig;

@@ -970,6 +970,19 @@ function createReverbEchoConfig(options) {
     ...callerHeaders
   });
   const authHeaders = resolveAuthHeaders();
+  const authOptions = {};
+  if (options.tokenProvider) {
+    authOptions.headers = authHeaders;
+    authOptions.headersProvider = resolveAuthHeaders;
+  } else if (Object.keys(authHeaders).length > 0) {
+    authOptions.headers = authHeaders;
+  }
+  if (options.auth?.params) {
+    authOptions.params = options.auth.params;
+  }
+  if (options.auth?.paramsProvider) {
+    authOptions.paramsProvider = options.auth.paramsProvider;
+  }
   return {
     broadcaster: "reverb",
     key,
@@ -979,7 +992,7 @@ function createReverbEchoConfig(options) {
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ["wss"] : ["ws", "wss"]),
     authEndpoint: options.authEndpoint ?? "/broadcasting/auth",
-    auth: options.tokenProvider ? { headers: authHeaders, headersProvider: resolveAuthHeaders } : Object.keys(authHeaders).length > 0 ? { headers: authHeaders } : options.auth
+    auth: Object.keys(authOptions).length > 0 ? authOptions : options.auth
   };
 }
 function windowSafeHost() {

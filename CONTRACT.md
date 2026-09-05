@@ -14,7 +14,9 @@ package in sync with it.
 - Entry point: `src/index.ts`
 - Main factory: `createRealtimeClient(options)`
 - Reverb helper: `createReverbEchoConfig(options)` — accepts `key`, `host`,
-  `port`, `scheme`, `authEndpoint`, `tokenProvider`. Never accepts or returns
-  the Reverb app secret.
+  `port`, `scheme`, `authEndpoint`, `tokenProvider`, `auth`. Never accepts or
+  returns the Reverb app secret.
+- Extra channel-auth material: `auth.headers` / `auth.params` (fixed) and
+  `auth.headersProvider` / `auth.paramsProvider` (re-read on every request).
 - Auth token source: `tokenProvider`. The package never logs users in or stores
   tokens; session/cookie apps can omit it.

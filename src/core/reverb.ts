@@ -10,6 +10,8 @@ export type ReverbEchoConfigOptions = {
   authEndpoint?: string;
   auth?: {
     headers?: Record<string, string>;
+    params?: Record<string, string>;
+    paramsProvider?: () => Record<string, string>;
   };
   tokenProvider?: SyncTokenProvider;
   enabledTransports?: ReverbTransport[];
@@ -28,6 +30,10 @@ export type ReverbEchoConfig = {
     headers?: Record<string, string>;
     /** Called by pusher-js on every channel-auth request, so the token is never stale. */
     headersProvider?: () => Record<string, string>;
+    /** Extra body fields on every channel-auth request. */
+    params?: Record<string, string>;
+    /** Called by pusher-js on every channel-auth request, so the fields are never stale. */
+    paramsProvider?: () => Record<string, string>;
   };
 };
 
@@ -52,6 +58,26 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
   });
   const authHeaders = resolveAuthHeaders();
 
+  // The auth endpoint often needs more than the token — a tenant, a role the caller is
+  // acting as — and pusher-js already appends `params`/`paramsProvider` to the auth body.
+  // Provider form for anything that changes while the client is alive.
+  const authOptions: ReverbEchoConfig['auth'] = {};
+
+  if (options.tokenProvider) {
+    authOptions.headers = authHeaders;
+    authOptions.headersProvider = resolveAuthHeaders;
+  } else if (Object.keys(authHeaders).length > 0) {
+    authOptions.headers = authHeaders;
+  }
+
+  if (options.auth?.params) {
+    authOptions.params = options.auth.params;
+  }
+
+  if (options.auth?.paramsProvider) {
+    authOptions.paramsProvider = options.auth.paramsProvider;
+  }
+
   return {
     broadcaster: 'reverb',
     key,
@@ -61,11 +87,7 @@ export function createReverbEchoConfig(options: ReverbEchoConfigOptions): Reverb
     forceTLS,
     enabledTransports: options.enabledTransports ?? (forceTLS ? ['wss'] : ['ws', 'wss']),
     authEndpoint: options.authEndpoint ?? '/broadcasting/auth',
-    auth: options.tokenProvider
-      ? { headers: authHeaders, headersProvider: resolveAuthHeaders }
-      : Object.keys(authHeaders).length > 0
-        ? { headers: authHeaders }
-        : options.auth,
+    auth: Object.keys(authOptions).length > 0 ? authOptions : options.auth,
   };
 }
 

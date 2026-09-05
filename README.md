@@ -57,7 +57,19 @@ const echo = new Echo({
 });
 ```
 
-The factory accepts `key`, `host`, `port`, `scheme`, `authEndpoint`, and `tokenProvider`. It does not accept (or emit) a secret. The real user check happens at `/broadcasting/auth` using your session / Sanctum / JWT — `APP_KEY` is not a substitute for user authentication.
+The factory accepts `key`, `host`, `port`, `scheme`, `authEndpoint`, `tokenProvider`, and `auth`. It does not accept (or emit) a secret.
+
+`auth` carries extra material to `/broadcasting/auth`: `headers` / `params` for fixed values, and `paramsProvider` for anything that changes while the client is alive — pusher-js calls it on every channel-auth request, so the value is never a stale snapshot.
+
+```ts
+createReverbEchoConfig({
+  key: process.env.REACT_APP_PIXEL_REALTIME_APP_KEY,
+  tokenProvider: () => localStorage.getItem('token'),
+  // reaches the auth endpoint as a normal request field on every subscribe
+  auth: { paramsProvider: () => ({ view_as: readCurrentRole() }) },
+});
+```
+ The real user check happens at `/broadcasting/auth` using your session / Sanctum / JWT — `APP_KEY` is not a substitute for user authentication.
 
 > `pixel-realtime` is a thin layer **around** Echo — it does not bundle it. Install the two peer libraries in your app: `npm install laravel-echo pusher-js`. (`pusher-js` is just the Pusher *protocol* client that Reverb speaks; it does not mean you use the hosted Pusher service.)
 
